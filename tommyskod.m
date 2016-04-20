@@ -13,8 +13,9 @@ end
 % trendr = zeros(41,13); %Correct trend 0/1
 % R = vinststd;
 % sr = vinststd;                    %sharpe ratio
-
+period=1;
 %MAFAST & MASLOW
+for int = 0:300:1200;
 for q = 100:5:300;
     for b = 15:2:40;
     vinsttyp = zeros(1, 4);
@@ -22,7 +23,7 @@ for q = 100:5:300;
     for val = 1:40
 
 %     trendnr = zeros(max(size(T+q:9269-21)),1);
-    for n=(1+q):1824-21
+    for n=301+int:601+int
         BMAS(n,val) = mean(B(n-q:n,val));
         BMAF(n,val) = mean(B(n-b:n,val));
         if (ge(BMAF(n,val),BMAS(n,val)))
@@ -44,6 +45,14 @@ for q = 100:5:300;
         foreignExc(q/5-19,ceil(b/2)-7) = vinsttyp(4);
     end
 end
+bestEQ(period)=max(max(equities));
+bestFI(period)=max(max(fixedIncome));
+bestCM(period)=max(max(commodities));
+bestFE(period)=max(max(foreignExc));
+period=period+1;
+end
+
+
 surf(15:2:40, 100:5:300, equities);
 xlabel('Fast moving average [# of days]');
 ylabel('Slow moving average [# of days]');
