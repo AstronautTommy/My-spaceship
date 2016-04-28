@@ -1,3 +1,4 @@
+%new&tonic
 tic
 close all
 load('KexJobbData');
@@ -17,8 +18,8 @@ foreignExc=zeros(41,13);
 allwins = zeros(41*13,1524);
 %MAFAST & MASLOW
 w = zeros(41*13,5);
-q=zeros(1524,4);
-for val = 1:13
+q=zeros(1524-29,4);
+for val = 1:3
     allwins = zeros(41*13,1524);
     %MAFAST & MASLOW
     w = zeros(41*13,5);
@@ -30,14 +31,22 @@ for val = 1:13
             s=dP.^2;
             risk=filter(1/DoR*ones(DoR,1),1,s);
             allwins((long/5-20)*13+ceil(short/2)-7,:) = dP(300+1:length(dP),val).*(position(300:(length(dP)-1),val)./sqrt(risk(300:length(dP)-1,val)));
-
+    %         vinst=sum(q); %BLIR RISKEN PÅ FEL DAG NU? RISK ÄR BASERAD PÅ dP OCH INTE P
+    %         medel=mean(q);
+    %         avik=std(q);
+    %         SR=medel./avik*sqrt(252);
+    %         equities(long/5-19,ceil(short/2)-7) = sum(SR(1:13));
+    %         fixedIncome(long/5-19,ceil(short/2)-7) = sum(SR(14:22));
+    %         commodities(long/5-19,ceil(short/2)-7) = sum(SR(23:35));
+    %         foreignExc(long/5-19,ceil(short/2)-7) = sum(SR(36:40));
         end
     end
 
     for o = 1:(max(size(allwins))/300)
-        w(:,o) = sum(allwins(:,(o-1)*300+1:300*o),2);
+        v = allwins(:,(o-1)*300+1:300*o);
+        w(:,o) = (mean(v,2)./(std(v.').')*sqrt(252));
     end
-    totvinst = ones(1,1524);
+    totvinst = ones(1,1524-29);
 
     for o = 1:5
         totvinst(1,(o-1)*300+1:o*299)=allwins(max(find(w(:,o)==max(w(:,o)))),(o-1)*300+1:(o)*299);
@@ -49,5 +58,27 @@ medel = mean(e);
 avik = std(e);
 SR = medel./avik*sqrt(252);
 
-
+% surf(15:2:40, 100:5:300, equities);
+% xlabel('Fast moving average [# of days]');
+% ylabel('Slow moving average [# of days]');
+% zlabel('Sharpe-ratio');
+% title('equities');
+% figure;
+% surf(15:2:40, 100:5:300, fixedIncome);
+% xlabel('Fast moving average [# of days]');
+% ylabel('Slow moving average [# of days]');
+% zlabel('Sharpe-ratio');
+% title('fixedIncome');
+% figure;
+% surf(15:2:40, 100:5:300, commodities);
+% xlabel('Fast moving average [# of days]');
+% ylabel('Slow moving average [# of days]');
+% zlabel('Sharpe-ratio');
+% title('commodities');
+% figure;
+% surf(15:2:40, 100:5:300, foreignExc);
+% xlabel('Fast moving average [# of days]');
+% ylabel('Slow moving average [# of days]');
+% zlabel('Sharpe-ratio');
+% title('foreignExc');
 toc
