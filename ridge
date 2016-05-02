@@ -1,0 +1,91 @@
+tic
+close all
+load('KexJobbData');
+B = closingPrice;
+qt = logspace(0,3,100);
+z = zeros(1,40);
+
+for k = 1:40                        %Find index for when we have our first value
+    if isnan(B(1,k))
+    n = 2;
+    while (isnan(B(n,k)))
+        n = n+1;
+    end
+    z(1,k) = n;
+    B(1,k) = B(n,k);                %Set the first value in the matrix to that value
+    end
+end
+I = find(isnan(B));
+
+
+for n=1:max(size(I));
+    B(I(n)) = B(I(n)-1);
+end
+
+dP = [zeros(1,size(B,2)); diff(B(7446:end,:))];
+Returns = zeros(1824,100);
+sr = zeros(40,1);
+Q = B(7446:9269,:);
+srr = zeros(100,1);
+
+%7446
+for val = 28:28
+    X = zeros(1824-300-321,300);      %X matrisen
+    X2 = zeros(300,300);
+    y = zeros(1824-300-321,1);
+    for i = 1:1203                  %träningsdata
+        
+        X(i,:) = Q(i:i+299,val);
+
+        y(i) = Q(i+20+300,val);
+
+    end
+    w = regress(y, X);
+    b = ridge(y, X, qt, 0);
+
+     for i=1:300                             %testar på de senaste 300 dagarna
+         X2(i,:) = Q(1203+i:1502+i,val);
+        
+         ypred = X2*b(2:end,:)+b(1);
+         
+         for j = 1:100
+              if ypred(i,j) > Q(1503+i,val);                 %Om det predikterade värdet om 21 dagar är större än värdet idag
+                 Returns(1504+i,j) = (dP(1504+i,val))/std(dP(1474+i:1503+i));
+             else
+                 Returns(1504+i,j) = -(dP(1504+i,val))/std(dP(1474+i:1503+i));
+             end
+         end
+
+     end
+
+    for t = 1:100
+        srr(t) = mean(Returns(1505:1804,t))/std(Returns(1505:1804,t))*sqrt(252);
+    end
+    sr(val) = max(srr(t));
+
+    ypred = X2*b(2:end,:);
+    %yq = X*b;
+
+    figure
+    plot(1:301,B(9269-321:end-21,val),'g')
+    legend('faktiska');
+    hold on
+    plot(1:300,ypred+b(1),'r');
+    legend('ridge')
+    hold on
+    plot(1:300,X2*w,'b');
+    legend('regression');
+    hold on
+    legend(names(val));
+    
+   figure
+    plot(qt,b(2:end,:),'LineWidth',2)
+    grid on
+    xlabel('Ridge Parameter')
+    ylabel('Standardized Coefficient')
+    title('{\bf Ridge Trace}')
+
+end
+
+
+toc
