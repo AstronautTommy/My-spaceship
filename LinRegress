@@ -1,0 +1,80 @@
+tic
+close all
+clear all
+load('KexJobbData');
+B = closingPrice;
+z = ones(1, 40);
+
+for k = 1:40                        %Find index for when we have our first value
+    if isnan(B(1,k))
+    n = 2;
+    while (isnan(B(n,k)))
+        n = n+1;
+    end
+    z(1,k) = n;
+    B(1,k) = B(n,k);                %Set the first value in the matrix to that value
+    end
+end
+I = find(isnan(B));
+
+
+for n=1:max(size(I));
+    B(I(n)) = B(I(n)-1);
+end
+
+Returns = zeros(300,40);
+sr = zeros(40,1);
+P = B(7446:9269,:);
+dP = [zeros(1,size(P,2)); diff(P)];
+
+%7446
+for val = 1:40
+    x = dates(z(1,val):9268);
+    T = z(1,val);                   %första dagen då det finns värden
+    X = zeros(1500,300);      %X matrisen
+    X2 = zeros(300,300);
+    y = zeros(1500,1);
+    for i = 1:(1500)
+        X(i,:) = P(i:i+299,val);
+
+        y(i) = P(i+320,val);
+
+    end
+
+    b = (X.'*X)\(X.'*y);
+
+
+    for i=1:300                             %testar på de senaste 300 dagarna
+        X2(i,:) = P(1200+i:1499+i,val);
+
+        ypred = X2*b;
+
+        if ypred(i) > P(1499+i,val);                 %Om det predikterade värdet om 21 dagar är större än värdet idag
+            Returns(i,val) = (dP(1500+i,val))/std(dP(1470+i:1499+i));
+        else
+            Returns(i,val) = -(dP(1500+i,val))/std(dP(1470+i:1499+i));
+        end
+    end
+
+
+    ypred = X2*b;
+    yq = X*b;
+
+%     figure
+%     plot(1:301,B(9269-300:end,val),'g')
+%     hold on
+%     plot(1:300,ypred)
+%     hold on
+%     legend(names(val));
+end
+    e(1,:) = sum(Returns(:,1:13),2);                   %summerar alla riskjusterade max-avkastningar
+    e(2,:) = sum(Returns(:,14:22),2);
+    e(3,:) = sum(Returns(:,23:35),2);
+    e(4,:) = sum(Returns(:,36:40),2);
+    medel = mean(e,2);
+    avik = std(e.');
+    SR = medel.'./avik*sqrt(252);
+    sr(val) = mean(Returns(:,val))/std(Returns(:,val))*sqrt(252);
+    
+
+toc
